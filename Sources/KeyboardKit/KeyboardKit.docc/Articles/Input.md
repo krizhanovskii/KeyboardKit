@@ -41,12 +41,9 @@ For instance, here is a custom provider that inherits ``EnglishInputSetProvider`
 
 ```swift
 class MyInputSetProvider: EnglishInputSetProvider {
-    
-    override var numericInputSet: NumericInputSet {
-        
-        public init() {
-            super.init(numericCurrency: "₽", symbolicCurrency: "$")
-        }
+
+    public init() {
+        super.init(numericCurrency: "₽", symbolicCurrency: "$")
     }
 }
 ```
@@ -71,6 +68,52 @@ This will make KeyboardKit use your custom implementation everywhere instead of 
 [KeyboardKit Pro][Pro] unlocks additional input sets and input set providers for all keyboard locales, as well as input set variations like ``AlphabeticInputSet/azerty`` and ``AlphabeticInputSet/qwertz``. 
 
 This lets you create a fully localized ``SystemKeyboard`` for all available locales with a single line of code.
+
+You can also access the underlying, locale-specific providers like this:
+
+```swift
+let provider = ProInputSetProvider.Swedish()
+```
+
+You can access all providers that your license unlocks like this:
+
+```swift
+let providers = license.localizedInputSetProviders
+```
+
+If you want to use a custom provider with KeyboardKit Pro, make sure to register your custom instance *after* registering your license key, otherwise it will be overwritten by the license registration process.
+
+You can still inherit `StandardInputSetProvider` with KeyboardKit Pro to get the standard behavior, combined with the additional functionality that your Pro license unlocks:
+
+```swift
+class CustomInputSetProvider: StandardInputSetProvider {
+
+    override var alphabeticInputSet: AlphabeticInputSet {
+        let baseSet = super.alphabeticInputSet
+        let customSet = // Your custom logic here
+        return customSet
+    }
+}
+```
+
+You can then create a custom provider instance with your license, like this:
+
+```swift
+open func setupKeyboardKit() {
+    try? setupPro(withLicenseKey: key, view: keyboardView) { license in
+        self.setupCustomServices(with: license)
+    }
+}
+
+func setupCustomServices(with license: License) {
+    inputSetProvider = CustomInputSetProvider(
+        keyboardContext: keyboardContext,
+        localizedProviders: license.localizedInputSetProviders
+    )
+}
+```
+
+You can of course add a custom initializer to your custom provider if you need additional things in it, then just call `super.init` to setup the rest. 
 
 
 

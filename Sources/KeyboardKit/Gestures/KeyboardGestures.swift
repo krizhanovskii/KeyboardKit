@@ -1,5 +1,5 @@
 //
-//  KeyboardGestures.swift
+//  KeyboardButtonGestures.swift
 //  KeyboardKit
 //
 //  Created by Daniel Saidi on 2021-01-10.
@@ -10,12 +10,12 @@
 import SwiftUI
 
 /**
- This view wraps any view and applies a ``GestureButton`` to
- it, to handle all actions for the provided keyboard action.
+ This view wraps a button and applies a gesture button to it,
+ to handle all actions for the provided keyboard action.
  
  This view is internal. Apply it with `View+keyboardGestures`.
  */
-struct KeyboardGestures<Content: View>: View {
+struct KeyboardButtonGestures<Content: View>: View {
     
     /**
      Apply a set of optional gesture actions to the provided
@@ -25,8 +25,9 @@ struct KeyboardGestures<Content: View>: View {
        - view: The view to apply the gestures to.
        - action: The keyboard action to trigger.
        - calloutContext: The callout context to affect, if any.
-       - isInScrollView: Whether or not the gestures are used in a scroll view.
        - isPressed: An optional binding that can be used to observe the button pressed state.
+       - isInScrollView: Whether or not the gestures are used in a scroll view.
+       - releaseOutsideTolerance: The percentage of the button size that should span outside the button bounds and still count as a release, by default `0.75`.
        - doubleTapAction: The action to trigger when the button is double tapped.
        - longPressAction: The action to trigger when the button is long pressed.
        - pressAction: The action to trigger when the button is pressed.
@@ -38,8 +39,9 @@ struct KeyboardGestures<Content: View>: View {
         view: Content,
         action: KeyboardAction?,
         calloutContext: KeyboardCalloutContext?,
-        isInScrollView: Bool = false,
         isPressed: Binding<Bool>,
+        isInScrollView: Bool,
+        releaseOutsideTolerance: Double,
         doubleTapAction: KeyboardGestureAction?,
         longPressAction: KeyboardGestureAction?,
         pressAction: KeyboardGestureAction?,
@@ -50,8 +52,9 @@ struct KeyboardGestures<Content: View>: View {
         self.view = view
         self.action = action
         self.calloutContext = calloutContext
-        self.isInScrollView = isInScrollView
         self.isPressed = isPressed
+        self.isInScrollView = isInScrollView
+        self.releaseOutsideTolerance = releaseOutsideTolerance
         self.doubleTapAction = doubleTapAction
         self.longPressAction = longPressAction
         self.pressAction = pressAction
@@ -63,8 +66,9 @@ struct KeyboardGestures<Content: View>: View {
     private let view: Content
     private let action: KeyboardAction?
     private let calloutContext: KeyboardCalloutContext?
-    private let isInScrollView: Bool
     private let isPressed: Binding<Bool>
+    private let isInScrollView: Bool
+    private let releaseOutsideTolerance: Double
     private let doubleTapAction: KeyboardGestureAction?
     private let longPressAction: KeyboardGestureAction?
     private let pressAction: KeyboardGestureAction?
@@ -73,9 +77,7 @@ struct KeyboardGestures<Content: View>: View {
     private let dragAction: KeyboardDragGestureAction?
 
     @State
-    private var isPressGestureActive = false {
-        didSet { isPressed.wrappedValue = isPressGestureActive }
-    }
+    private var lastDragValue: DragGesture.Value?
 
     @State
     private var shouldApplyReleaseAction = true
@@ -83,7 +85,7 @@ struct KeyboardGestures<Content: View>: View {
     var body: some View {
         view.overlay(
             GeometryReader { geo in
-                gestureButton(for: geo)
+                button(for: geo)
             }
         )
     }
@@ -103,50 +105,59 @@ private extension View {
 
 // MARK: - Views
 
-private extension KeyboardGestures {
+private extension KeyboardButtonGestures {
 
     @ViewBuilder
-    func gestureButton(for geo: GeometryProxy) -> some View {
+    func button(for geo: GeometryProxy) -> some View {
         if isInScrollView {
-            ScrollViewGestureButton(
-                isPressed: isPressed,
-                pressAction: { handlePress(in: geo) },
-                releaseInsideAction: { handleReleaseInside(in: geo) },
-                releaseOutsideAction: { handleReleaseOutside(in: geo) },
-                longPressAction: { handleLongPress(in: geo) },
-                doubleTapAction: { handleDoubleTap(in: geo) },
-                repeatAction: { handleRepeat(in: geo) },
-                dragAction: { handleDrag(in: geo, value: $0) },
-                endAction: { handleGestureEnded(in: geo) },
-                label: { _ in Color.clearInteractable }
-            )
+            scrollButton(for: geo)
         } else {
-            GestureButton(
-                isPressed: isPressed,
-                pressAction: { handlePress(in: geo) },
-                releaseInsideAction: { handleReleaseInside(in: geo) },
-                releaseOutsideAction: { handleReleaseOutside(in: geo) },
-                longPressAction: { handleLongPress(in: geo) },
-                doubleTapAction: { handleDoubleTap(in: geo) },
-                repeatAction: { handleRepeat(in: geo) },
-                dragAction: { handleDrag(in: geo, value: $0) },
-                endAction: { handleGestureEnded(in: geo) },
-                label: { _ in Color.clearInteractable }
-            )
+            gestureButton(for: geo)
         }
+    }
+
+    func gestureButton(for geo: GeometryProxy) -> some View {
+        GestureButton(
+            isPressed: isPressed,
+            pressAction: { handlePress(in: geo) },
+            releaseInsideAction: { handleReleaseInside(in: geo) },
+            releaseOutsideAction: { handleReleaseOutside(in: geo) },
+            longPressAction: { handleLongPress(in: geo) },
+            doubleTapAction: { handleDoubleTap(in: geo) },
+            repeatAction: { handleRepeat(in: geo) },
+            dragAction: { handleDrag(in: geo, value: $0) },
+            endAction: { handleGestureEnded(in: geo) },
+            label: { _ in Color.clearInteractable }
+        )
+    }
+
+    func scrollButton(for geo: GeometryProxy) -> some View {
+        ScrollViewGestureButton(
+            isPressed: isPressed,
+            pressAction: { handlePress(in: geo) },
+            releaseInsideAction: { handleReleaseInside(in: geo) },
+            releaseOutsideAction: { handleReleaseOutside(in: geo) },
+            longPressAction: { handleLongPress(in: geo) },
+            doubleTapAction: { handleDoubleTap(in: geo) },
+            repeatAction: { handleRepeat(in: geo) },
+            dragAction: { handleDrag(in: geo, value: $0) },
+            endAction: { handleGestureEnded(in: geo) },
+            label: { _ in Color.clearInteractable }
+        )
     }
 }
 
 
 // MARK: - Actions
 
-private extension KeyboardGestures {
+private extension KeyboardButtonGestures {
 
     func handleDoubleTap(in geo: GeometryProxy) {
         doubleTapAction?()
     }
 
     func handleDrag(in geo: GeometryProxy, value: DragGesture.Value) {
+        lastDragValue = value
         calloutContext?.action.updateSelection(with: value.translation)
         dragAction?(value.startLocation, value.location)
     }
@@ -155,7 +166,7 @@ private extension KeyboardGestures {
         endActionCallout()
         calloutContext?.input.resetWithDelay()
         calloutContext?.action.reset()
-        shouldApplyReleaseAction = true
+        resetGestureState()
     }
 
     func handleLongPress(in geo: GeometryProxy) {
@@ -175,7 +186,10 @@ private extension KeyboardGestures {
         releaseAction?()
     }
 
-    func handleReleaseOutside(in geo: GeometryProxy) {}
+    func handleReleaseOutside(in geo: GeometryProxy) {
+        guard shouldApplyReleaseOutsize(for: geo) else { return }
+        handleReleaseInside(in: geo)
+    }
 
     func handleRepeat(in geo: GeometryProxy) {
         repeatAction?()
@@ -192,9 +206,36 @@ private extension KeyboardGestures {
         calloutContext?.action.endDragGesture()
     }
 
+    func resetGestureState() {
+        lastDragValue = nil
+        shouldApplyReleaseAction = true
+    }
+
+    func shouldApplyReleaseOutsize(for geo: GeometryProxy) -> Bool {
+        guard let dragValue = lastDragValue else { return false }
+        let rect = CGRect.releaseOutsideToleranceArea(for: geo, tolerance: releaseOutsideTolerance)
+        let isInsideRect = rect.contains(dragValue.location)
+        return isInsideRect
+    }
+
     func updateShouldApplyReleaseAction() {
         guard let context = calloutContext?.action else { return }
         shouldApplyReleaseAction = shouldApplyReleaseAction && !context.hasSelectedAction
+    }
+}
+
+extension CGRect {
+
+    /// This function returns a rect with padding in which a
+    /// release outside should be applied.
+    static func releaseOutsideToleranceArea(
+        for geo: GeometryProxy,
+        tolerance: Double
+    ) -> CGRect {
+        let size = geo.size
+        let rect = CGRect(origin: .zero, size: geo.size)
+            .insetBy(dx: -size.width * tolerance, dy: -size.height * tolerance)
+        return rect
     }
 }
 #endif

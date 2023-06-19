@@ -14,33 +14,35 @@ public extension View {
     typealias KeyboardDragGestureAction = (_ startLocation: CGPoint, _ location: CGPoint) -> Void
 
     /**
-     Apply keyboard-specific gestures to the view, using the
-     provided `action`, `context` and `actionHandler`.
+     Apply keyboard button gestures to the view, that should
+     send the gesture events to the provided `actionHandler`.
 
-     The ``KeyboardAction/nextKeyboard`` action will not use
-     the provided gesture actions, but will instead wrap the
-     view in a ``NextKeyboardButton``.
+     The ``KeyboardAction/nextKeyboard`` action will trigger
+     keyboard switching events instead of the action handler.
 
      - Parameters:
        - action: The keyboard action to trigger.
        - actionHandler: The keyboard action handler to use.
        - calloutContext: The callout context to affect, if any.
-       - isInScrollView: Whether or not the gestures are used in a scroll view, by default `false`.
        - isPressed: An optional binding that can be used to observe the button pressed state.
+       - isInScrollView: Whether or not the gestures are used in a scroll view, by default `false`.
+       - releaseOutsideTolerance: The percentage of the button size that should span outside the button bounds and still count as a release, by default `0.75`.
      */
     @ViewBuilder
-    func keyboardGestures(
+    func keyboardButtonGestures(
         for action: KeyboardAction,
         actionHandler: KeyboardActionHandler,
         calloutContext: KeyboardCalloutContext?,
+        isPressed: Binding<Bool> = .constant(false),
         isInScrollView: Bool = false,
-        isPressed: Binding<Bool> = .constant(false)
+        releaseOutsideTolerance: Double = 1
     ) -> some View {
-        self.keyboardGestures(
+        self.keyboardButtonGestures(
             action: action,
             calloutContext: calloutContext,
-            isInScrollView: isInScrollView,
             isPressed: isPressed,
+            isInScrollView: isInScrollView,
+            releaseOutsideTolerance: releaseOutsideTolerance,
             doubleTapAction: { actionHandler.handle(.doubleTap, on: action) },
             longPressAction: { actionHandler.handle(.longPress, on: action) },
             pressAction: { actionHandler.handle(.press, on: action) },
@@ -51,18 +53,18 @@ public extension View {
     }
     
     /**
-     Apply keyboard-specific gestures to the view, using the
-     provided action blocks.
+     Apply keyboard button gestures to the view, that should
+     trigger the provided gestures action.
 
-     The ``KeyboardAction/nextKeyboard`` action will not use
-     the provided gesture actions, but will instead wrap the
-     view in a ``NextKeyboardButton``.
+     The ``KeyboardAction/nextKeyboard`` action will trigger
+     keyboard switching instead of the provided actions.
      
      - Parameters:
        - action: The keyboard action to trigger, by deafult `nil`.
        - calloutContext: The callout context to affect, if any.
-       - isInScrollView: Whether or not the gestures are used in a scroll view, by default `false`, by deafult `false`.
        - isPressed: An optional binding that can be used to observe the button pressed state, by deafult `false`.
+       - isInScrollView: Whether or not the gestures are used in a scroll view, by default `false`, by deafult `false`.
+       - releaseOutsideTolerance: The percentage of the button size that should span outside the button bounds and still count as a release, by default `0.75`.
        - doubleTapAction: The action to trigger when the button is double tapped, by deafult `nil`.
        - longPressAction: The action to trigger when the button is long pressed, by deafult `nil`.
        - pressAction: The action to trigger when the button is pressed, by deafult `nil`.
@@ -71,11 +73,12 @@ public extension View {
        - dragAction: The action to trigger when the button is dragged, by deafult `nil`.
      */
     @ViewBuilder
-    func keyboardGestures(
+    func keyboardButtonGestures(
         action: KeyboardAction? = nil,
         calloutContext: KeyboardCalloutContext?,
-        isInScrollView: Bool = false,
         isPressed: Binding<Bool> = .constant(false),
+        isInScrollView: Bool = false,
+        releaseOutsideTolerance: Double = 1,
         doubleTapAction: KeyboardGestureAction? = nil,
         longPressAction: KeyboardGestureAction? = nil,
         pressAction: KeyboardGestureAction? = nil,
@@ -84,12 +87,13 @@ public extension View {
         dragAction: KeyboardDragGestureAction? = nil
     ) -> some View {
         #if os(iOS) || os(macOS) || os(watchOS)
-        let gestures = KeyboardGestures(
+        let gestures = KeyboardButtonGestures(
             view: self,
             action: action,
             calloutContext: calloutContext,
-            isInScrollView: isInScrollView,
             isPressed: isPressed,
+            isInScrollView: isInScrollView,
+            releaseOutsideTolerance: releaseOutsideTolerance,
             doubleTapAction: doubleTapAction,
             longPressAction: longPressAction,
             pressAction: pressAction,

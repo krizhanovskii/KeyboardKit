@@ -11,23 +11,99 @@ Breaking changes can still occur in minor versions, patches and BETA features, i
 
 
 
+## 7.8
+
+### ✨ New Features
+
+* `KeyboardActionHandler` has a new `handle` function.
+* `KeyboardBackgroundStyle` has many new properties and builder functions.
+* `KeyboardButtonStyle` now has separate border and shadow properties.
+* `NextKeyboardButton` no longer throws assert failures by default.
+* `PreviewAutocompleteProvider` is a new preview service.
+* `SystemKeyboard` has a new `renderBackground` property.
+* `ToggleToolbar` is a new toolbar that can be used to toggle between two toolbars.
+
+### 👑 Pro changes
+
+* `KeyboardTheme` style variations have been adjusted to use the new background style model.
+* `KeyboardThemeAppearance` is now open for inheritance.
+* `KeyboardThemeAppearance` will now use the largest shadow size to determine the bottom edge insets.
+* `KeyboardThemeFormModel` is a new observable type.
+* `KeyboardThemeLivePreview` has new initializers.
+* `KeyboardThemeLivePreviewHeader` is a new header preview.
+* `ToggleToolbar` is now part of the main library, and is no longer throwing.
+
+### 🗑️ Deprecations
+
+* `KeyboardBackgroundStyle` has deprecated the type-based initializer and its property.
+* `KeyboardBackgroundType` has been deprecated.
+* `KeyboardInputViewController` pro setup functions have been redesigned.
+* `ToggleToolbar` throwing initializers have been deprecated.
+
+
+
+## 7.7.1
+
+### 💡 Adjustments
+
+* `EnglishCalloutActionProvider` `localeKey` is now mutable.
+* `EnglishInputSetProvider` is now open to inheritance.
+* `EnglishInputSetProvider` `localeKey` is now mutable.
+* `EnglishKeyboardLayoutProvider` `localeKey` is now mutable.
+* `StandardKeyboardAppearance` `backgroundStyle` is now `open`.
+* `StandardKeyboardAppearance` `foregroundColor` is now `open`.
+
+### 🐛 Bug fixes
+
+* `StandardKeyboardActionHandler` once again activates the space drag gesture on long press instead of on press. 
+
+
+
 ## 7.7
+
+This version aims to reduce the amount of lost keystrokes by adding a release outside tolerance, to let a button trigger a release event even if the release is a bit outside of the button bounds. The lack of such a tolerance may have caused lost keystrokes before, since it's easy to slide with your finger while typing and ending up with your finger outside the button bounds.
+
+Since the best tolerance amount is still unclear, the `keyboardButtonGestures` view extension now lets you specify a tolerance, which is a percentage of the button width.
+
+This version also adds a vertical threshold when moving the input cursor with the space button, since dragging the finger too much up and down can result in unexpected movement. 
+
+This version also tweaks the emoji keyboards to look better and closer to the native ones.
+
+There are also new keyboard actions, new url opening utilities, and a bunch of theme adjustments.   
 
 ### ✨ New Features
 
 * `KeyboardAction` has new `systemSettings` and `url` actions.
 * `KeyboardAction` has a new `standardAction` property.
+* `KeyboardAppearance` has new, optional `foregroundColor` property.
 * `KeyboardController` has a new `openUrl` function.
 * `KeyboardLayout` has a new `hasEmojiKeyboardSwitcher`.
 * `KeyboardUrlOpener` is a new class for opening URLs.
 
+### 💡 Adjustments
+
+* Thanks to [krizhanovskii](https://github.com/krizhanovskii) the Pro Max layout configuration has been improved.
+* `KeyboardEmojiKeyboard` `KeyboardEmojiCategoryKeyboard` are tweaked to look closer to the system keyboards.
+* `KeyboardGestures` now handles a release outside as a release inside, if the release happens within a tolerance area.
+
 ### 👑 Pro changes
 
-* `KeyboardTheme` has new `author` and `collectionName` properties.
-* `License` has a new `localizedInputSetProviders` property.
-* `License` has a new `localizedKeyboardLayoutProviders` property.
+* `KeyboardTheme` has new `author`, `collectionName` and `foregroundColor` properties.
+* `KeyboardThemeLivePreview` now renders light mode only as default.
+* `License` has new `localizedCalloutActionProviders`, `localizedInputSetProviders` and `localizedKeyboardLayoutProviders` properties.
+* Some themes define a foreground color to make the emoji keyboard look good.
 * The license-based `StandardInputSetProvider` convenience initializer has been deprecated.
 * The license-based `StandardKeyboardLayoutProvider` convenience initializer has been deprecated.
+
+### 🐛 Bug fixes
+
+* `KeyboardTheme` didn't set the identifier when it was created with a `MinimalStyle`. 
+* `View+SystemKeyboardButton` didn't send the pressed state to the system keyboard button body.
+
+### 🗑️ Deprecations
+
+* `KeyboardThemePreview` has been renamed to `KeyboardThemeLivePreview`.
+* The `keyboardGestures` view extensions have been renamed to  `keyboardButtonGestures`.
 
 ### 💥 Breaking changes 
 
